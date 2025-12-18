@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crunchyroll Account Checker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        textarea, input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+        
+        textarea:focus, input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        textarea {
+            min-height: 200px;
+        }
+        
+        .controls {
+            margin: 15px 0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 0.95em;
+        }
+        
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-danger {
+            background: #ff4757;
+            color: white;
+        }
+        
+        .btn-danger:hover:not(:disabled) {
+            background: #ff3838;
+        }
+        
+        .btn-secondary {
+            background: #2f3542;
+            color: white;
+        }
+        
+        .btn-secondary:hover:not(:disabled) {
+            background: #1a1f2e;
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .stat {
+            background: #f5f5f5;
+            padding: 12px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .progress-section {
+            margin-top: 20px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.9em;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .current-combo {
+            padding: 10px;
+            background: #f5f5f5;
+            border-left: 4px solid #667eea;
+            border-radius: 3px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+        }
+        
+        .full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .results-section {
+            max-height: 400px;
+            overflow-y: auto;
+            background: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            padding: 10px;
+        }
+        
+        .result-item {
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 3px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9em;
+            border-left: 4px solid;
+        }
+        
+        .result-item.premium {
+            background: #e8f8f5;
+            border-left-color: #27ae60;
+            color: #27ae60;
+        }
+        
+        .result-item.free {
+            background: #e8f4f8;
+            border-left-color: #3498db;
+            color: #3498db;
+        }
+        
+        .result-item.invalid {
+            background: #fadbd8;
+            border-left-color: #e74c3c;
+            color: #e74c3c;
+        }
+        
+        .result-item.blocked {
+            background: #fce8d3;
+            border-left-color: #f39c12;
+            color: #f39c12;
+        }
+        
+        .result-email {
+            flex: 1;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+        }
+        
+        .result-status {
+            padding: 4px 8px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 3px;
+            margin-left: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.8em;
+        }
+        
+        .alert {
+            padding: 12px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        .alert-error {
+            background: #fadbd8;
+            color: #c0392b;
+            border: 1px solid #e74c3c;
+        }
+        
+        .alert-success {
+            background: #d5f4e6;
+            color: #27ae60;
+            border: 1px solid #27ae60;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        @media (max-width: 1200px) {
+            .main-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            header h1 {
+                font-size: 1.8em;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎬 Crunchyroll Checker</h1>
+            <p>Check Crunchyroll account credentials in bulk</p>
+        </header>
+        
+        <div class="main-grid">
+            <div class="card">
+                <h2>📝 Combos</h2>
+                <textarea id="combosInput" placeholder="Enter email:password combinations&#10;one per line&#10;&#10;example@mail.com:password123&#10;user@domain.com:mypass456"></textarea>
+                
+                <button class="btn-secondary" style="margin-top: 10px; width: 100%;" onclick="document.getElementById('combosFile').click()">📁 Load from File</button>
+                <input type="file" id="combosFile" style="display:none;" accept=".txt,.csv" onchange="loadCombosFile(event)">
+            </div>
+            
+            <div class="card">
+                <h2>🔌 Proxies (Optional)</h2>
+                <textarea id="proxiesInput" placeholder="Paste proxies (one per line)&#10;Format: IP:PORT or IP:PORT:USER:PASS&#10;&#10;192.168.1.1:8080&#10;proxy.server.com:3128"></textarea>
+                
+                <label style="margin-top: 10px;">
+                    <input type="checkbox" id="validateProxies">
+                    Validate proxies before use
+                </label>
+                
+                <button class="btn-secondary" style="margin-top: 10px; width: 100%;" onclick="document.getElementById('proxiesFile').click()">📁 Load from File</button>
+                <input type="file" id="proxiesFile" style="display:none;" accept=".txt" onchange="loadProxiesFile(event)">
+            </div>
+            
+            <div class="card">
+                <h2>⚙️ Options</h2>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <label>
+                        <input type="checkbox" id="brutalMode">
+                        <strong>Brutal Mode</strong><br>
+                        <small>No delays, fastest checking</small>
+                    </label>
+                    <label>
+                        <input type="checkbox" id="ultraMode">
+                        <strong>Ultra Mode</strong><br>
+                        <small>5s timeouts, very fast</small>
+                    </label>
+                </div>
+                
+                <div style="margin-top: 15px; display: flex; gap: 10px;">
+                    <button class="btn-primary" id="startBtn" onclick="startChecking()" style="flex: 1;">▶ Start</button>
+                    <button class="btn-danger" id="stopBtn" onclick="stopChecking()" style="display:none; flex: 1;">⏹ Stop</button>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Statistics</h2>
+                <div class="stats-grid">
+                    <div class="stat">
+                        <div class="stat-value" id="checkedStat">0</div>
+                        <div class="stat-label">Checked</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="premiumStat">0</div>
+                        <div class="stat-label">Premium</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="freeStat">0</div>
+                        <div class="stat-label">Free</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="invalidStat">0</div>
+                        <div class="stat-label">Invalid</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="blockedStat">0</div>
+                        <div class="stat-label">Blocked</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="etaStat">--:--</div>
+                        <div class="stat-label">ETA</div>
+                    </div>
+                </div>
+                
+                <div class="progress-section">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="current-combo" id="currentCombo">Waiting for input...</div>
+                </div>
+                
+                <div style="margin-top: 10px;">
+                    <button class="btn-secondary" onclick="exportResults('csv')" id="exportBtn" disabled>📥 Export CSV</button>
+                </div>
+            </div>
+            
+            <div class="card full-width">
+                <h2>Results</h2>
+                <div id="alerts"></div>
+                <div class="results-section" id="resultsList">
+                    <div style="text-align: center; color: #999;">No results yet...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let statusInterval = null;
+        let currentJobId = null;
+        
+        async function startChecking() {
+            const combos = document.getElementById('combosInput').value;
+            if (!combos.trim()) {
+                showAlert('Please enter at least one combo', 'error');
+                return;
+            }
+            
+            const proxies = document.getElementById('proxiesInput').value;
+            const brutal = document.getElementById('brutalMode').checked;
+            const ultra = document.getElementById('ultraMode').checked;
+            const validateProxies = document.getElementById('validateProxies').checked;
+            
+            try {
+                const response = await fetch('/api/check', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        combos: combos,
+                        proxies: proxies,
+                        brutal_mode: brutal,
+                        ultra_mode: ultra,
+                        validate_proxies: validateProxies
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    showAlert(data.error || 'Error starting checker', 'error');
+                    return;
+                }
+                
+                currentJobId = data.job_id;
+                
+                document.getElementById('startBtn').style.display = 'none';
+                document.getElementById('stopBtn').style.display = 'inline-block';
+                document.getElementById('combosInput').disabled = true;
+                document.getElementById('proxiesInput').disabled = true;
+                document.getElementById('brutalMode').disabled = true;
+                document.getElementById('ultraMode').disabled = true;
+                document.getElementById('validateProxies').disabled = true;
+                
+                clearResults();
+                startStatusPolling();
+                showAlert('Checking started!', 'success');
+            } catch (error) {
+                showAlert('Error: ' + error.message, 'error');
+            }
+        }
+        
+        async function stopChecking() {
+            if (!currentJobId) {
+                showAlert('No active job to stop', 'error');
+                return;
+            }
+            
+            try {
+                await fetch('/api/stop', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ job_id: currentJobId })
+                });
+                stopStatusPolling();
+                document.getElementById('startBtn').style.display = 'inline-block';
+                document.getElementById('stopBtn').style.display = 'none';
+                document.getElementById('combosInput').disabled = false;
+                document.getElementById('proxiesInput').disabled = false;
+                document.getElementById('brutalMode').disabled = false;
+                document.getElementById('ultraMode').disabled = false;
+                document.getElementById('validateProxies').disabled = false;
+                showAlert('Checker stopped', 'success');
+            } catch (error) {
+                showAlert('Error stopping checker: ' + error.message, 'error');
+            }
+        }
+        
+        async function updateStatus() {
+            if (!currentJobId) return;
+            
+            try {
+                const statusResp = await fetch(`/api/status?job_id=${currentJobId}`);
+                const status = await statusResp.json();
+                
+                document.getElementById('checkedStat').textContent = status.stats.checked;
+                document.getElementById('premiumStat').textContent = status.stats.premium;
+                document.getElementById('freeStat').textContent = status.stats.free;
+                document.getElementById('invalidStat').textContent = status.stats.invalid;
+                document.getElementById('blockedStat').textContent = status.stats.blocked;
+                document.getElementById('etaStat').textContent = status.stats.eta;
+                
+                document.getElementById('progressFill').style.width = status.progress + '%';
+                document.getElementById('progressFill').textContent = status.progress + '%';
+                document.getElementById('currentCombo').textContent = status.current || 'Waiting...';
+                
+                if (status.results_count > 0) {
+                    document.getElementById('exportBtn').disabled = false;
+                    updateResultsList();
+                }
+                
+                if (!status.is_running) {
+                    stopStatusPolling();
+                    document.getElementById('startBtn').style.display = 'inline-block';
+                    document.getElementById('stopBtn').style.display = 'none';
+                    document.getElementById('combosInput').disabled = false;
+                    document.getElementById('proxiesInput').disabled = false;
+                    document.getElementById('brutalMode').disabled = false;
+                    document.getElementById('ultraMode').disabled = false;
+                    document.getElementById('validateProxies').disabled = false;
+                    showAlert('Checking completed!', 'success');
+                }
+            } catch (error) {
+                console.error('Error updating status:', error);
+            }
+        }
+        
+        async function updateResultsList() {
+            if (!currentJobId) return;
+            
+            try {
+                const resultsResp = await fetch(`/api/results?job_id=${currentJobId}`);
+                const data = await resultsResp.json();
+                
+                if (data.results.length === 0) {
+                    document.getElementById('resultsList').innerHTML = '<div style="text-align: center; color: #999;">No results yet...</div>';
+                    return;
+                }
+                
+                const html = data.results.map(r => `
+                    <div class="result-item ${r.status}">
+                        <span class="result-email">${escapeHtml(r.email)}</span>
+                        <span class="result-status">${r.status}</span>
+                    </div>
+                `).join('');
+                
+                document.getElementById('resultsList').innerHTML = html;
+                document.getElementById('resultsList').scrollTop = document.getElementById('resultsList').scrollHeight;
+            } catch (error) {
+                console.error('Error fetching results:', error);
+            }
+        }
+        
+        function startStatusPolling() {
+            updateStatus();
+            statusInterval = setInterval(updateStatus, 1000);
+        }
+        
+        function stopStatusPolling() {
+            if (statusInterval) {
+                clearInterval(statusInterval);
+                statusInterval = null;
+            }
+        }
+        
+        function clearResults() {
+            document.getElementById('resultsList').innerHTML = '<div style="text-align: center; color: #999;">Checking...</div>';
+            document.getElementById('exportBtn').disabled = true;
+        }
+        
+        function showAlert(message, type) {
+            const alertsDiv = document.getElementById('alerts');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            alertsDiv.innerHTML = '';
+            alertsDiv.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+        
+        async function exportResults(format) {
+            if (!currentJobId) {
+                showAlert('No results to export', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/export?format=${format}&job_id=${currentJobId}`);
+                if (!response.ok) throw new Error('Export failed');
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `results_${new Date().toISOString().slice(0,10)}.${format}`;
+                a.click();
+                window.URL.revokeObjectURL(url);
+            } catch (error) {
+                showAlert('Error exporting: ' + error.message, 'error');
+            }
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        async function loadCombosFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            try {
+                const text = await file.text();
+                document.getElementById('combosInput').value = text;
+                showAlert(`Loaded ${text.split('\n').filter(l => l.includes(':')).length} combos`, 'success');
+            } catch (error) {
+                showAlert('Error reading file: ' + error.message, 'error');
+            }
+        }
+        
+        async function loadProxiesFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            try {
+                const text = await file.text();
+                document.getElementById('proxiesInput').value = text;
+                showAlert(`Loaded ${text.split('\n').filter(l => l.trim()).length} proxies`, 'success');
+            } catch (error) {
+                showAlert('Error reading file: ' + error.message, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
